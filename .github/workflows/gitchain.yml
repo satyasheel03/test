@@ -1,0 +1,39 @@
+name: Log Contribution to GitChain
+
+# Fires on every push to any branch.
+# The developer's workflow is unchanged — this runs silently in the background.
+on: [push]
+
+jobs:
+  log-contribution:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install GitChain dependencies
+        run: npm install tweetnacl
+        working-directory: gitchain/github-action
+
+      - name: Log commit to GitChain
+        run: node gitchain-submit.js
+        working-directory: gitchain/github-action
+        env:
+          GITCHAIN_PRIVATE_KEY: ${{ secrets.GITCHAIN_PRIVATE_KEY }}
+          GITCHAIN_NODE_URL:    ${{ secrets.GITCHAIN_NODE_URL }}
+          GITHUB_SHA:           ${{ github.sha }}
+          GITHUB_ACTOR:         ${{ github.actor }}
+          GITHUB_REPOSITORY:    ${{ github.repository }}
+          GITHUB_REF_NAME:      ${{ github.ref_name }}
+      
+      - name: Debug git config
+        run: |
+          git config --list --show-origin
+          git show -p HEAD | head -30
+
